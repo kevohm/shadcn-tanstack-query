@@ -1,38 +1,29 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import axios from "axios";
-import { useEffect, useState } from "react";
-import { user } from "../types/landing.types";
 import AddUser from "./AddUser";
+import { useQuery } from "@tanstack/react-query";
+import { user } from './../types/landing.types';
+import { axiosClient } from "@/main";
 
 const Landing = () => {
-  const [users, setUsers] = useState<user[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const fetchUsers = async () => {
-    try {
-      const { data } = await axios.get("https://reqres.in/api/users?page=1");
-      setUsers(data.data);
-    } catch (error) {
-      setError("Error Occurred");
+  const {isPending,data,isError,error} = useQuery({
+    queryKey:["users"],
+    queryFn:async ()=>{
+      const {data} = await axiosClient.get("/users")
+      return data
     }
-    setLoading(false);
-  };
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-  if (loading) {
+  })
+  if (isPending) {
     return (
       <div>
         <p>Loading...</p>
       </div>
     );
   }
-  if (error) {
+  if (isError) {
     return (
       <div>
-        <p>Loading...</p>
+        <p>{error.message}</p>
       </div>
     );
   }
@@ -43,8 +34,8 @@ const Landing = () => {
         <AddUser/>
       </div>
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {users ? (
-          users.map((user) => {
+        {data?.length > 0 ? (
+          data?.map((user:user) => {
             const username = `${user.first_name} ${user.last_name}`;
             const initials = `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`
             return (
